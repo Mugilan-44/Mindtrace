@@ -18,8 +18,18 @@ class EmotionAnalysisResponse(BaseModel):
 
 # Initialize the pipeline globally so it's loaded once upon startup
 logger.info("Initializing emotion detection pipeline... This may take a moment.")
-classifier = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", top_k=1)
+classifier = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion", top_k=1)
 logger.info("Pipeline initialized successfully.")
+
+# Map distilbert output labels to our existing expected labels
+LABEL_MAPPING = {
+    "sadness": "sadness",
+    "joy": "joy",
+    "love": "joy",       # Map love to joy for backend compatibility
+    "anger": "anger",
+    "fear": "fear",
+    "surprise": "surprise"
+}
 
 @app.get("/api/v1/health")
 def health_check():
@@ -34,8 +44,11 @@ def analyze_emotion(request: EmotionAnalysisRequest):
     # result is a list of lists when top_k is specified, e.g. [[{'label': 'joy', 'score': 0.9}]]
     best_prediction = result[0][0]
     
-    emotion = best_prediction['label']
+    raw_emotion = best_prediction['label']
     score = best_prediction['score']
+    
+    # Apply mapping, defaulting to raw emotion if not found
+    emotion = LABEL_MAPPING.get(raw_emotion.lower(), raw_emotion.lower())
     
     return EmotionAnalysisResponse(
         emotion=emotion,
