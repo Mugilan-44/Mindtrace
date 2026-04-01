@@ -61,7 +61,7 @@ exports.sendMessage = async (req, res) => {
       console.warn("AI Generation failed, using fallback.", err.message);
     }
 
-    // Save Bot Message Safely
+    // Save Bot Message Safely (Hardcode emotion to save 1 full LLM API roundtrip latency!)
     const savedBotMessage = await Message.create({
       userId,
       sender: "bot",
