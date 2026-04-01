@@ -22,6 +22,13 @@ app.use(cors({
 app.use(helmet());
 app.use(express.json());
 
+// Global Request Logger
+app.use((req, res, next) => {
+  console.log(`📡 ${req.method} ${req.url}`);
+  console.log("📦 Headers:", req.headers['content-type']);
+  next();
+});
+
 // ==================== ROUTES ====================
 
 // Import routes explicitly (important for production)

@@ -5,15 +5,23 @@ const mongoose = require('mongoose');
 
 exports.sendMessage = async (req, res) => {
   try {
-    const { text } = req.body;
-    const userId = req.user.id;
+    console.log("🔥 RAW BODY:", req.body);
 
-    if (!text) {
-      return res.status(400).json({ error: 'Message text is required' });
+    const message = req.body?.message || req.body?.text;
+
+    if (!message || message.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        error: "Message text is required"
+      });
     }
 
+    console.log("✅ MESSAGE RECEIVED:", message);
+
+    const userId = req.user.id;
+
     // 1. Analyze Emotion via Python AI Service
-    const emotionData = await aiService.analyzeEmotion(text);
+    const emotionData = await aiService.analyzeEmotion(message);
 
     // 2. Fetch Chat History for Context (last 10 messages)
     let history = [];
@@ -35,7 +43,7 @@ exports.sendMessage = async (req, res) => {
         userMsg = await Message.create({
           userId,
           sender: 'user',
-          content: text,
+          content: message,
           emotion: emotionData.emotion,
           emotionScore: emotionData.score
         });
@@ -45,7 +53,7 @@ exports.sendMessage = async (req, res) => {
     }
 
     // 4. Generate AI Response
-    const botReplyText = await aiService.generateChatResponse(text, emotionData.emotion, history);
+    const botReplyText = await aiService.generateChatResponse(message, emotionData.emotion, history);
 
     // 5. Save Bot Message
     let botMsg;
@@ -64,13 +72,17 @@ exports.sendMessage = async (req, res) => {
 
     // 6. Return Data
     res.json({
-      userMessage: userMsg || { _id: 'temp1', sender: 'user', content: text, emotion: emotionData.emotion, createdAt: new Date() },
+      success: true,
+      userMessage: userMsg || { _id: 'temp1', sender: 'user', content: message, emotion: emotionData.emotion, createdAt: new Date() },
       botResponse: botMsg || { _id: 'temp2', sender: 'bot', content: botReplyText, emotion: 'neutral', createdAt: new Date() }
     });
 
   } catch (error) {
-    console.error('SendMessage Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ CHAT ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
   }
 };
 
