@@ -1,31 +1,50 @@
 require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const connectDB = require('./config/db');
 
+// Initialize app
+const app = express();
+
 // Connect Database
 connectDB();
 
-const app = express();
+// ==================== MIDDLEWARE ====================
 
-// Middleware
-// Configure CORS for production Vercel frontend
+// CORS (allow frontend)
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
+
 app.use(helmet());
 app.use(express.json());
 
-// Routes
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/chat', require('./routes/chat.routes'));
-app.use('/api/analytics', require('./routes/analytics.routes'));
+// ==================== ROUTES ====================
 
+// Import routes explicitly (important for production)
+const authRoutes = require('./routes/auth.routes.js');
+const chatRoutes = require('./routes/chat.routes.js');
+const analyticsRoutes = require('./routes/analytics.routes.js');
+
+// Mount routes
+app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/analytics', analyticsRoutes);
+
+// Health check (for Render)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'API is running' });
 });
+
+// Optional root route (for browser testing)
+app.get('/', (req, res) => {
+  res.send('MindTrace Backend Running 🚀');
+});
+
+// ==================== SERVER ====================
 
 const PORT = process.env.PORT || 5000;
 
