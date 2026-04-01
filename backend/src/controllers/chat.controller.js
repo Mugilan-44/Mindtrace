@@ -5,75 +5,83 @@ const mongoose = require('mongoose');
 
 exports.sendMessage = async (req, res) => {
   try {
-    console.log("🔥 CHAT HIT:", req.body);
+    console.log("🔥 BODY:", req.body);
+    console.log("👤 USER:", req.user);
 
     const message = req.body?.message || req.body?.text;
 
     if (!message || message.trim() === "") {
-      return res.status(400).json({ error: "Message text is required" });
+      return res.status(400).json({
+        success: false,
+        error: "Message text is required"
+      });
     }
 
-    console.log("✅ MESSAGE RECEIVED:", message);
+    const userId = req.user?.id || null;
 
-    const userId = req.user.id;
-
-    // 1. Analyze Emotion via Python AI Service (now Mistral LLM)
-    const emotionData = await aiService.analyzeEmotion(message);
+    let emotion = "neutral";
+    let emotionScore = 0;
     
-    const emotion = emotionData.emotion;
-    const score = emotionData.score;
+    try {
+      const emotionData = await aiService.analyzeEmotion(message);
+      emotion = emotionData?.emotion || "neutral";
+      emotionScore = emotionData?.score || 0;
+    } catch (err) {
+      console.warn("Emotion detection failed, using fallback.", err.message);
+    }
     
-    console.log("🧠 DETECTED EMOTION:", emotion, score);
+    console.log("🧠 DETECTED EMOTION:", emotion, emotionScore);
 
-    // 2. Fetch Chat History for Context (last 10 messages)
+    // Fetch Chat History for Context
     let history = [];
     try {
-      if (mongoose.connection.readyState === 1) {
-        history = await Message.find({ userId })
-          .sort({ createdAt: -1 })
-          .limit(10);
-        history = history.reverse(); // Chronological order
+      if (mongoose.connection.readyState === 1 && userId) {
+        history = await Message.find({ userId }).sort({ createdAt: -1 }).limit(10);
+        history = history.reverse(); 
       }
     } catch (err) {
       console.warn("Could not fetch history", err.message);
     }
     
-    // 3. Save User Message
-    const userMsg = await Message.create({
+    // Save User Message Safely
+    const savedUserMessage = await Message.create({
       userId,
-      sender: 'user',
+      sender: "user",
       content: message,
       emotion,
-      emotionScore: score
+      emotionScore
     });
 
-    // 4. Generate AI Response
-    const botReplyText = await aiService.generateChatResponse(message, emotion, history);
+    // Generate Bot Response Safely
+    let botReply = "I am experiencing temporary connection issues, but I'm here for you. How are you feeling?";
+    try {
+      const reply = await aiService.generateChatResponse(message, emotion, history);
+      botReply = reply || botReply;
+    } catch (err) {
+      console.warn("AI Generation failed, using fallback.", err.message);
+    }
 
-    // Optional: Detect the Bot's own generated emotion!
-    const botEmotionData = await aiService.analyzeEmotion(botReplyText);
-
-    // 5. Save Bot Message
-    const botMsg = await Message.create({
+    // Save Bot Message Safely
+    const savedBotMessage = await Message.create({
       userId,
-      sender: 'bot',
-      content: botReplyText,
-      emotion: botEmotionData.emotion,
-      emotionScore: botEmotionData.score
+      sender: "bot",
+      content: botReply,
+      emotion: "neutral",
+      emotionScore: 0
     });
 
-    // 6. Return Data
+    // Return consistent response
     res.json({
       success: true,
-      userMessage: userMsg,
-      botResponse: botMsg
+      userMessage: savedUserMessage,
+      botResponse: savedBotMessage
     });
 
   } catch (error) {
-    console.error('❌ CHAT ERROR:', error);
-    res.status(500).json({
+    console.error("❌ CHAT ERROR:", error);
+    return res.status(500).json({
       success: false,
-      error: 'Server error'
+      error: error.message || "Server error"
     });
   }
 };
