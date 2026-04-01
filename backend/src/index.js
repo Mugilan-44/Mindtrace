@@ -25,9 +25,10 @@ app.use(express.json());
 // ==================== ROUTES ====================
 
 // Import routes explicitly (important for production)
-const authRoutes = require('./routes/auth.routes.js');
-const chatRoutes = require('./routes/chat.routes.js');
-const analyticsRoutes = require('./routes/analytics.routes.js');
+const path = require('path');
+const authRoutes = require(path.join(__dirname, 'routes', 'auth.routes.js'));
+const chatRoutes = require(path.join(__dirname, 'routes', 'chat.routes.js'));
+const analyticsRoutes = require(path.join(__dirname, 'routes', 'analytics.routes.js'));
 
 // Mount routes
 app.use('/api/auth', authRoutes);
