@@ -17,8 +17,13 @@ exports.sendMessage = async (req, res) => {
 
     const userId = req.user.id;
 
-    // 1. Analyze Emotion via Python AI Service
+    // 1. Analyze Emotion via Python AI Service (now Mistral LLM)
     const emotionData = await aiService.analyzeEmotion(message);
+    
+    const emotion = emotionData.emotion;
+    const score = emotionData.score;
+    
+    console.log("🧠 DETECTED EMOTION:", emotion, score);
 
     // 2. Fetch Chat History for Context (last 10 messages)
     let history = [];

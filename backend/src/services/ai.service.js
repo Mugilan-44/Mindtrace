@@ -1,52 +1,64 @@
-const axios = require('axios');
 const OpenAI = require('openai');
 
-// Initialize OpenAI (Compatible with Mistral API)
 const openai = new OpenAI({
   apiKey: process.env.MISTRAL_API_KEY,
   baseURL: "https://api.mistral.ai/v1",
 });
 
-const FASTAPI_URL = process.env.FASTAPI_URL || 'http://localhost:8000';
-
 async function analyzeEmotion(text) {
+  const prompt = `You are an emotion detection system.
+
+Analyze the user's message and return ONLY valid JSON:
+{
+"emotion": "<one of: happy, sad, anxious, angry, neutral>",
+"score": <number between 0 and 1>
+}
+
+Message:
+${text}`;
+
   try {
-    const response = await axios.post(`${FASTAPI_URL}/api/v1/analyze-emotion`, { text });
-    return response.data; // { emotion: 'joy', score: 0.95 }
+    const completion = await openai.chat.completions.create({
+      model: "mistral-small-latest",
+      messages: [{ role: "user", content: prompt }]
+    });
+
+    const content = completion.choices[0].message.content.trim();
+    
+    // Attempt to extract JSON safely from potential markdown blocks
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const jsonStr = jsonMatch ? jsonMatch[0] : content;
+    
+    const parsed = JSON.parse(jsonStr);
+    
+    return {
+      emotion: parsed.emotion ? parsed.emotion.toLowerCase() : 'neutral',
+      score: parsed.score || 0
+    };
   } catch (error) {
-    console.error('Error hitting FastAPI emotion model:', error.message);
-    // Fallback if AI service is down
-    return { emotion: 'neutral', score: 0.0 };
+    console.error('Error hitting Mistral emotion classification:', error.message);
+    return { emotion: 'neutral', score: 0 };
   }
 }
 
 async function generateChatResponse(userMessage, userEmotion, chatHistory) {
-  // Construct context
-  let historyText = chatHistory.map(msg => `${msg.sender === 'user' ? 'User' : 'MindTrace'}: ${msg.content}`).join('\n');
-  
-  const prompt = `
-You are MindTrace, an empathetic mental health AI chatbot.
-You provide supportive, insightful, and safe conversational support.
-The user's currently detected emotion is: ${userEmotion}.
+  const prompt = `You are a supportive mental health assistant.
+User emotion: ${userEmotion}
+User message: ${userMessage}
 
-Recent Chat History:
-${historyText}
-
-Respond naturally and empathetically to the user's message considering their current emotion. Keep it concise, helpful, and supportive.
-`;
+Respond empathetically and helpfully.`;
 
   try {
     const completion = await openai.chat.completions.create({
       model: "mistral-small-latest",
       messages: [
-        { role: "system", content: prompt },
-        { role: "user", content: userMessage }
-      ],
+        { role: "system", content: prompt }
+      ]
     });
     return completion.choices[0].message.content;
   } catch (error) {
-    console.error('Error generating OpenAI response:', error.message);
-    return "I'm having a little trouble connecting to my thoughts right now, but I hear you. Please give me a moment.";
+    console.error('Error generating Mistral chat response:', error.message);
+    return "I am currently having trouble connecting, but I am here for you. Take a deep breath.";
   }
 }
 
