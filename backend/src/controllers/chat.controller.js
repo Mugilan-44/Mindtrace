@@ -39,44 +39,34 @@ exports.sendMessage = async (req, res) => {
     }
     
     // 3. Save User Message
-    let userMsg;
-    try {
-      if (mongoose.connection.readyState === 1) {
-        userMsg = await Message.create({
-          userId,
-          sender: 'user',
-          content: message,
-          emotion: emotionData.emotion,
-          emotionScore: emotionData.score
-        });
-      }
-    } catch (err) {
-      console.warn("Could not save user message.", err.message);
-    }
+    const userMsg = await Message.create({
+      userId,
+      sender: 'user',
+      content: message,
+      emotion,
+      emotionScore: score
+    });
 
     // 4. Generate AI Response
-    const botReplyText = await aiService.generateChatResponse(message, emotionData.emotion, history);
+    const botReplyText = await aiService.generateChatResponse(message, emotion, history);
+
+    // Optional: Detect the Bot's own generated emotion!
+    const botEmotionData = await aiService.analyzeEmotion(botReplyText);
 
     // 5. Save Bot Message
-    let botMsg;
-    try {
-      if (mongoose.connection.readyState === 1) {
-        botMsg = await Message.create({
-          userId,
-          sender: 'bot',
-          content: botReplyText,
-          emotion: 'neutral' 
-        });
-      }
-    } catch (err) {
-      console.warn("Could not save bot message.", err.message);
-    }
+    const botMsg = await Message.create({
+      userId,
+      sender: 'bot',
+      content: botReplyText,
+      emotion: botEmotionData.emotion,
+      emotionScore: botEmotionData.score
+    });
 
     // 6. Return Data
     res.json({
       success: true,
-      userMessage: userMsg || { _id: 'temp1', sender: 'user', content: message, emotion: emotionData.emotion, createdAt: new Date() },
-      botResponse: botMsg || { _id: 'temp2', sender: 'bot', content: botReplyText, emotion: 'neutral', createdAt: new Date() }
+      userMessage: userMsg,
+      botResponse: botMsg
     });
 
   } catch (error) {
