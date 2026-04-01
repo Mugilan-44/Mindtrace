@@ -6,7 +6,11 @@ const { protect } = require('../middleware/auth.middleware');
 console.log("🔥 CHAT ROUTES LOADED");
 
 // Chat routes (Protected)
-router.post('/', protect, chatController.sendMessage);
+router.post('/message', protect, chatController.sendMessage);
 router.get('/history', protect, chatController.getChatHistory);
+
+router.get('/test', (req, res) => {
+  res.send("CHAT ROUTE WORKING");
+});
 
 module.exports = router;

@@ -5,15 +5,12 @@ const mongoose = require('mongoose');
 
 exports.sendMessage = async (req, res) => {
   try {
-    console.log("🔥 RAW BODY:", req.body);
+    console.log("🔥 CHAT HIT:", req.body);
 
     const message = req.body?.message || req.body?.text;
 
     if (!message || message.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        error: "Message text is required"
-      });
+      return res.status(400).json({ error: "Message text is required" });
     }
 
     console.log("✅ MESSAGE RECEIVED:", message);

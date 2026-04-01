@@ -32,15 +32,12 @@ app.use((req, res, next) => {
 // ==================== ROUTES ====================
 
 // Import routes explicitly (important for production)
-const path = require('path');
-const authRoutes = require(path.join(__dirname, 'routes', 'auth.routes.js'));
-const chatRoutes = require(path.join(__dirname, 'routes', 'chat.routes.js'));
-const analyticsRoutes = require(path.join(__dirname, 'routes', 'analytics.routes.js'));
+console.log("🔥 REGISTERING ROUTES");
 
 // Mount routes
-app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/chat', require('./routes/chat.routes'));
+app.use('/api/analytics', require('./routes/analytics.routes'));
 
 // Health check (for Render)
 app.get('/api/health', (req, res) => {
