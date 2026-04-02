@@ -12,34 +12,47 @@ export const ChatPage = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get user for token
-  const { user } = useAuth();
+  const token = localStorage.getItem("token");
+  console.log("🔐 TOKEN:", token);
 
   // Load history on mount
   useEffect(() => {
-    if (!user) return;
+    if (!token) return;
+    
     fetch(`${API_URL}/api/chat/history`, {
       headers: {
-        'Authorization': `Bearer ${user.token}`
+        'Authorization': `Bearer ${token}`
       }
     })
-      .then(res => res.json())
+      .then(res => {
+        if (res.status === 401) {
+          console.error("Unauthorized - redirecting to login");
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+          return null;
+        }
+        return res.json();
+      })
       .then(data => {
-        if (Array.isArray(data)) setMessages(data);
+        if (data && Array.isArray(data)) {
+          setMessages(data);
+        }
       })
       .catch(err => console.error("Error loading history:", err));
-  }, [user]);
+  }, [token]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
+
+    if (!token) return;
 
     const userText = inputValue.trim();
     setInputValue('');
     
     // Optimistic UI update
     const tempUserMsg = { sender: 'user', content: userText };
-    setMessages(prev => [...prev, tempUserMsg]);
+    setMessages(prev => Array.isArray(prev) ? [...prev, tempUserMsg] : [tempUserMsg]);
     setIsLoading(true);
 
     try {
@@ -47,17 +60,35 @@ export const ChatPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ text: userText })
+        body: JSON.stringify({ message: userText })
       });
 
+      if (response.status === 401) {
+        console.error("Unauthorized - redirecting to login");
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+        return;
+      }
+
       const data = await response.json();
+      console.log("CHAT RESPONSE:", data);
+      
+      if (!data || !data.botResponse) {
+        console.error("Invalid response:", data);
+        return;
+      }
       
       // Update with confirmed data (including emotion)
       setMessages(prev => {
-        const withoutLast = prev.slice(0, -1);
-        return [...withoutLast, data.userMessage, data.botResponse];
+        const _prev = Array.isArray(prev) ? prev : [];
+        const withoutLast = _prev.slice(0, -1);
+        return [
+          ...withoutLast, 
+          data.userMessage || {}, 
+          data.botResponse || {}
+        ];
       });
     } catch (error) {
       console.error("Error sending message:", error);

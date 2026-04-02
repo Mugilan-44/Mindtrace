@@ -22,9 +22,18 @@ export const ChatWindow = ({ messages, isLoading }) => {
             <p>Your safe space for conversation and emotional tracking.</p>
           </div>
         ) : (
-          messages.map((msg, index) => (
-            <MessageBubble key={index} message={msg} />
-          ))
+          Array.isArray(messages) && messages.map((msg, index) => {
+            if (!msg) return null;
+            
+            // Map explicitly overriding broken props
+            const safeMsg = {
+               ...msg,
+               sender: msg.sender || "unknown",
+               content: msg.content || ""
+            };
+            
+            return <MessageBubble key={index} message={safeMsg} />;
+          })
         )}
         
         {isLoading && (
