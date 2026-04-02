@@ -42,10 +42,28 @@ export const ChatPage = () => {
   }, [token]);
 
   const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
+    if (e && e.preventDefault) e.preventDefault();
+    
+    console.log("SEND CLICKED");
+    console.log("MESSAGE:", inputValue);
 
-    if (!token) return;
+    if (!inputValue.trim()) {
+      console.log("Blocked empty message");
+      return;
+    }
+    
+    if (isLoading) {
+      console.log("Blocked because isLoading is true");
+      return;
+    }
+
+    const currentToken = localStorage.getItem("token");
+    console.log("TOKEN:", currentToken);
+
+    if (!currentToken) {
+      console.error("Blocked because NO TOKEN");
+      return;
+    }
 
     const userText = inputValue.trim();
     setInputValue('');
@@ -56,14 +74,17 @@ export const ChatPage = () => {
     setIsLoading(true);
 
     try {
+      console.log("Calling API");
       const response = await fetch(`${API_URL}/api/chat/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${currentToken}`
         },
         body: JSON.stringify({ message: userText })
       });
+
+      console.log("Response:", response.status);
 
       if (response.status === 401) {
         console.error("Unauthorized - redirecting to login");
