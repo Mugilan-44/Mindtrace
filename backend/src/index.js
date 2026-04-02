@@ -14,8 +14,29 @@ connectDB();
 // ==================== MIDDLEWARE ====================
 
 // CORS (allow frontend)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://mindtrace-ten.vercel.app"
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: function (origin, callback) {
+    console.log("🌐 Incoming Origin:", origin);
+    
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // allow ALL vercel preview deployments
+    if (origin && origin.endsWith(".vercel.app")) {
+      return callback(null, true);
+    }
+
+    console.log("❌ Blocked by CORS:", origin);
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true
 }));
 
@@ -42,6 +63,11 @@ app.use('/api/analytics', require('./routes/analytics.routes'));
 // Health check (for Render)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'API is running' });
+});
+
+// Debug test
+app.get('/api/debug', (req, res) => {
+  res.json({ success: true, message: "Debug route explicitly reached" });
 });
 
 // Optional root route (for browser testing)
