@@ -4,7 +4,8 @@ import { ChatWindow } from '../components/chat/ChatWindow';
 import { Sidebar } from '../components/layout/Sidebar';
 import { useAuth } from '../context/AuthContext';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api';
+console.log("🚀 API URL:", import.meta.env.VITE_API_URL);
+const API_URL = import.meta.env.VITE_API_URL || 'https://mindtrace-72eh.onrender.com';
 
 export const ChatPage = () => {
   const [messages, setMessages] = useState([]);
@@ -17,7 +18,7 @@ export const ChatPage = () => {
   // Load history on mount
   useEffect(() => {
     if (!user) return;
-    fetch(`${BACKEND_URL}/chat/history`, {
+    fetch(`${API_URL}/api/chat/history`, {
       headers: {
         'Authorization': `Bearer ${user.token}`
       }
@@ -42,7 +43,7 @@ export const ChatPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/chat/message`, {
+      const response = await fetch(`${API_URL}/api/chat/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

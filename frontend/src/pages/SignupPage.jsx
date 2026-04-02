@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles } from 'lucide-react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api';
+console.log("🚀 API URL:", import.meta.env.VITE_API_URL);
+const API_URL = import.meta.env.VITE_API_URL || 'https://mindtrace-72eh.onrender.com';
 
 export const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -19,7 +20,7 @@ export const SignupPage = () => {
     setError(null);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/auth/signup`, {
+      const res = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

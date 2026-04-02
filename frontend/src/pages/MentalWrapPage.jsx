@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api';
+console.log("🚀 API URL:", import.meta.env.VITE_API_URL);
+const API_URL = import.meta.env.VITE_API_URL || 'https://mindtrace-72eh.onrender.com';
 
 export const MentalWrapPage = () => {
   const [wrapData, setWrapData] = useState(null);
@@ -15,7 +16,7 @@ export const MentalWrapPage = () => {
   useEffect(() => {
     if (!user) return;
     
-    fetch(`${BACKEND_URL}/analytics/wrap/weekly`, {
+    fetch(`${API_URL}/api/analytics/wrap/weekly`, {
       headers: {
         'Authorization': `Bearer ${user.token}`
       }
