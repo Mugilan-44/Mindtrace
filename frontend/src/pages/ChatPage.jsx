@@ -61,7 +61,8 @@ export const ChatPage = () => {
     console.log("TOKEN:", currentToken);
 
     if (!currentToken) {
-      console.error("Blocked because NO TOKEN");
+      console.error("NO TOKEN → redirect");
+      window.location.href = "/login";
       return;
     }
 

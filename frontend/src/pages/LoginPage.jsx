@@ -31,7 +31,12 @@ export const LoginPage = () => {
         throw new Error(data.error || 'Login failed');
       }
 
-      login(data); // Save to context / localStorage
+      // Save directly to localStorage securely
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      console.log("TOKEN SAVED:", data.token);
+
+      login(data); // Notify context
       navigate('/chat');
     } catch (err) {
       setError(err.message);
