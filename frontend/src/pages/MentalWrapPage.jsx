@@ -11,6 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://mindtrace-72eh.onrender
 export const MentalWrapPage = () => {
   const [wrapData, setWrapData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -50,11 +51,14 @@ export const MentalWrapPage = () => {
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
-      <Sidebar />
+      <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <div className="flex flex-col flex-1 relative overflow-y-auto">
         <header className="h-14 flex items-center border-b border-border px-4 md:px-6 shrink-0 bg-background/80 backdrop-blur-sm z-10 sticky top-0">
-          <button className="md:hidden mr-4 text-muted-foreground hover:text-foreground">
+          <button 
+            className="md:hidden mr-4 text-muted-foreground hover:text-foreground"
+            onClick={() => setIsMenuOpen(true)}
+          >
             <Menu size={24} />
           </button>
           <h1 className="font-semibold text-lg flex-1">MindTrace Wrapped</h1>
